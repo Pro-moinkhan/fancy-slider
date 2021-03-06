@@ -1,3 +1,8 @@
+// Features added:
+// 1. added loading spinner for data loading and search item loading.
+// 2. added a selected img counter.
+
+
 const imagesArea = document.querySelector('.images');
 const gallery = document.querySelector('.gallery');
 const galleryHeader = document.querySelector('.gallery-header');
@@ -25,62 +30,112 @@ const showImages = (images) => {
     div.innerHTML = ` <img class="img-fluid img-thumbnail" onclick=selectItem(event,"${image.webformatURL}") src="${image.webformatURL}" alt="${image.tags}">`;
     gallery.appendChild(div)
   })
-
+  toggleSpinner()
 }
 
+
+// fetching data:
 const getImages = (query) => {
-  fetch(`https://pixabay.com/api/?key=${KEY}=${query}&image_type=photo&pretty=true`)
+  const url = `https://pixabay.com/api/?key=${KEY}=${query}&image_type=photo&pretty=true`
+  toggleSpinner()
+  fetch(url)
     .then(response => response.json())
-    .then(data => showImages(data.hitS))
-    .catch(err => console.log(err))
+    .then(data => showImages(data.hits))
+    .catch(err => {
+      console.log(err)
+      toggleSpinner()
+    })
 }
 
 let slideIndex = 0;
 const selectItem = (event, img) => {
   let element = event.target;
-  element.classList.add('added');
- 
+  // element.classList.add('added');
+  element.classList.toggle('added');
   let item = sliders.indexOf(img);
+  let imgCount = 0;
+  const selectedImg = document.getElementById('selected_img');
+  selectedImg.style.color = "blue";
   if (item === -1) {
     sliders.push(img);
+    imgCount = sliders.length;
+    selectedImg.innerText = "selected img:" + imgCount;
   } else {
-    alert('Hey, Already added !')
+    sliders.splice(item, 1);
+    imgCount = sliders.length;
+    selectedImg.innerText = "selected img:" + imgCount;
   }
 }
+
+// tried with another way ( its complex for my stupid brain -_- ):
+
+// let slideIndex = 0;
+// const selectItem = (event, img) => {
+//   let element = event.target;
+//   element.classList.toggle('added');
+//   let item = sliders.indexOf(img);
+//   let imgCount = 0;
+//   const selectedImg = document.getElementById('selected_img');
+//   selectedImg.style.color = "blue";
+//   if (element.classList.contains('added')) {
+//     sliders.push(img);
+//     imgCount = sliders.length;
+//     selectedImg.innerText = "selected img:" + imgCount;
+//   }
+//   else {
+//     sliders.splice(item, 1);
+//     imgCount = sliders.length;
+//     selectedImg.innerText = "selected img:" + imgCount;
+//   }
+// }
+
+
 var timer
 const createSlider = () => {
+  const checkDuration = document.getElementById('duration').value;
   // check slider image length
   if (sliders.length < 2) {
     alert('Select at least 2 image.')
     return;
   }
-  // crate slider previous next area
-  sliderContainer.innerHTML = '';
-  const prevNext = document.createElement('div');
-  prevNext.className = "prev-next d-flex w-100 justify-content-between align-items-center";
-  prevNext.innerHTML = ` 
-  <span class="prev" onclick="changeItem(-1)"><i class="fas fa-chevron-left"></i></span>
-  <span class="next" onclick="changeItem(1)"><i class="fas fa-chevron-right"></i></span>
-  `;
+  else if (checkDuration == '') {
+    alert('Please input a value, thanks')
+  }
+  else if (checkDuration == 0) {
+    alert('Please input a value, getter then 0, thanks')
+  }
+  else if (checkDuration < 0) {
+    alert('Please input a positive value, thanks')
+  }
+  else {
+    // crate slider previous next area
+    sliderContainer.innerHTML = '';
+    const prevNext = document.createElement('div');
+    prevNext.className = "prev-next d-flex w-100 justify-content-between align-items-center";
+    prevNext.innerHTML = ` 
+    <span class="prev" onclick="changeItem(-1)"><i class="fas fa-chevron-left"></i></span>
+    <span class="next" onclick="changeItem(1)"><i class="fas fa-chevron-right"></i></span>
+    `;
 
-  sliderContainer.appendChild(prevNext)
-  document.querySelector('.main').style.display = 'block';
-  // hide image aria
-  imagesArea.style.display = 'none';
-  const duration = document.getElementById('duration').value || 1000;
-  sliders.forEach(slide => {
-    let item = document.createElement('div')
-    item.className = "slider-item";
-    item.innerHTML = `<img class="w-100"
-    src="${slide}"
-    alt="">`;
-    sliderContainer.appendChild(item)
-  })
-  changeSlide(0)
-  timer = setInterval(function () {
-    slideIndex++;
-    changeSlide(slideIndex);
-  }, duration);
+    sliderContainer.appendChild(prevNext)
+    document.querySelector('.main').style.display = 'block';
+    // hide image aria
+    imagesArea.style.display = 'none';
+    const duration = document.getElementById('duration').value || 1000;
+    sliders.forEach(slide => {
+      let item = document.createElement('div')
+      item.className = "slider-item";
+      item.innerHTML = `<img class="w-100"
+      src="${slide}"
+      alt="">`;
+      sliderContainer.appendChild(item)
+    })
+    changeSlide(0)
+    timer = setInterval(function () {
+      slideIndex++;
+      changeSlide(slideIndex);
+    }, duration);
+  }
 }
 
 // change slider index 
@@ -96,16 +151,13 @@ const changeSlide = (index) => {
     slideIndex = items.length - 1
     index = slideIndex;
   };
-
   if (index >= items.length) {
     index = 0;
     slideIndex = 0;
   }
-
   items.forEach(item => {
     item.style.display = "none"
   })
-
   items[index].style.display = "block"
 }
 
@@ -119,4 +171,19 @@ searchBtn.addEventListener('click', function () {
 
 sliderBtn.addEventListener('click', function () {
   createSlider()
+})
+
+// loading spinner:
+const toggleSpinner = () => {
+  const loading_spinner = document.getElementById('loading_spinner');
+  loading_spinner.classList.toggle('d-none');
+  const display_img = document.getElementById('display_img');
+  display_img.classList.toggle('d-none');
+}
+
+// search by enter btn:
+document.getElementById('search').addEventListener('keypress', function (event) {
+  if (event.key = "Enter") {
+    document.getElementById('search-btn').click();
+  }
 })
